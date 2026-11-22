@@ -1,0 +1,90 @@
+{% extends 'layout/base.html' %}
+{% from 'layout/macros.html' import error_list %}
+
+{% block title %}Lập lịch chuyến bay{% endblock %}
+
+{% block content %}
+<h1 class="text-center text-success mt-2">LỊCH CHUYẾN BAY</h1>
+
+<div class="row">
+    <div class="col-lg-8">
+        {{ error_list(errors) }}
+        <form method="post" action="">
+            <div class="row g-3 mt-1">
+                <div class="col-md-4">
+                    <label class="form-label" for="code">Mã chuyến bay</label>
+                    <input class="form-control text-uppercase" id="code" name="code" maxlength="20" placeholder="VN101" value="{{ form.get('code', '') }}" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="origin_id">Sân bay đi</label>
+                    <select class="form-select" id="origin_id" name="origin_id" required>
+                        <option value="">Chọn</option>
+                        {% for a in airports %}<option value="{{ a.id }}" {{ 'selected' if form.get('origin_id')|string == a.id|string }}>{{ a.code }} - {{ a.city }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="destination_id">Sân bay đến</label>
+                    <select class="form-select" id="destination_id" name="destination_id" required>
+                        <option value="">Chọn</option>
+                        {% for a in airports %}<option value="{{ a.id }}" {{ 'selected' if form.get('destination_id')|string == a.id|string }}>{{ a.code }} - {{ a.city }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="departure_time">Ngày giờ</label>
+                    <input class="form-control" type="datetime-local" id="departure_time" name="departure_time" value="{{ form.get('departure_time', '') }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="duration_minutes">Thời gian bay (phút)</label>
+                    <input class="form-control num" type="number" min="{{ reg.min_flight_minutes }}" id="duration_minutes" name="duration_minutes" value="{{ form.get('duration_minutes', '') }}" required>
+                    <div class="form-text">Tối thiểu {{ reg.min_flight_minutes }} phút.</div>
+                </div>
+                {% for c in classes %}
+                <div class="col-md-6">
+                    <label class="form-label" for="seats_{{ c.id }}">Số lượng ghế {{ c.name|lower }}</label>
+                    <input class="form-control num" type="number" min="0" id="seats_{{ c.id }}" name="seats_{{ c.id }}" value="{{ form.get('seats_' ~ c.id, 0) }}" required>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if reg.max_intermediate_airports > 0 %}
+            <h5 class="mt-4">Sân bay trung gian</h5>
+            <p class="small text-muted">Tối đa {{ reg.max_intermediate_airports }} sân bay, thời gian dừng từ {{ reg.min_stop_minutes }} đến {{ reg.max_stop_minutes }} phút. Bỏ trống nếu bay thẳng.</p>
+            <table class="table table-sm align-middle">
+                <thead><tr><th style="width: 3.5rem;">STT</th><th>Sân bay trung gian</th><th style="width: 11rem;">Thời gian dừng (phút)</th><th>Ghi chú</th></tr></thead>
+                <tbody>
+                {% for i in stop_rows %}
+                <tr>
+                    <td>{{ i }}</td>
+                    <td>
+                        <select class="form-select form-select-sm" name="stop_airport_{{ i }}" aria-label="Sân bay trung gian {{ i }}">
+                            <option value="">Không có</option>
+                            {% for a in airports %}<option value="{{ a.id }}" {{ 'selected' if form.get('stop_airport_' ~ i)|string == a.id|string }}>{{ a.code }} - {{ a.city }}</option>{% endfor %}
+                        </select>
+                    </td>
+                    <td><input class="form-control form-control-sm num" type="number" min="{{ reg.min_stop_minutes }}" max="{{ reg.max_stop_minutes }}" name="stop_minutes_{{ i }}" value="{{ form.get('stop_minutes_' ~ i, '') }}" aria-label="Thời gian dừng {{ i }}"></td>
+                    <td><input class="form-control form-control-sm" name="stop_note_{{ i }}" maxlength="255" value="{{ form.get('stop_note_' ~ i, '') }}" aria-label="Ghi chú {{ i }}"></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+
+            <button class="btn btn-success mt-3" type="submit">Lập lịch</button>
+        </form>
+    </div>
+
+    <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="card">
+            <div class="card-body small">
+                <h6>Quy định hiện hành</h6>
+                <ul class="mb-0 ps-3">
+                    <li>Thời gian bay tối thiểu {{ reg.min_flight_minutes }} phút.</li>
+                    <li>Tối đa {{ reg.max_intermediate_airports }} sân bay trung gian.</li>
+                    <li>Thời gian dừng từ {{ reg.min_stop_minutes }} đến {{ reg.max_stop_minutes }} phút.</li>
+                    <li>Tuyến bay phải được quản trị viên khai báo kèm đơn giá cho từng hạng có ghế.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'layout/base.html' %}
+{% from 'layout/macros.html' import error_list %}
+
+{% block title %}Thanh toán vé {{ ticket.code }}{% endblock %}
+
+{% block content %}
+<h1 class="text-center text-success mt-2">THANH TOÁN TRỰC TUYẾN</h1>
+
+<div class="mx-auto" style="max-width: 560px;">
+    <div class="alert alert-warning small">Đây là cổng thanh toán giả lập để thử nghiệm, không trừ tiền thật.</div>
+    {{ error_list(errors) }}
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between"><span class="text-muted">Mã vé</span><strong>{{ ticket.code }}</strong></div>
+            <div class="d-flex justify-content-between"><span class="text-muted">Chuyến bay</span><span>{{ ticket.flight.code }} ({{ ticket.flight.route.name }})</span></div>
+            <div class="d-flex justify-content-between"><span class="text-muted">Khởi hành</span><span class="num">{{ ticket.flight.departure_time|dt }}</span></div>
+            <div class="d-flex justify-content-between"><span class="text-muted">Hành khách</span><span>{{ ticket.passenger_name }}</span></div>
+            <div class="d-flex justify-content-between"><span class="text-muted">Hạng vé</span><span>{{ ticket.ticket_class.name }}</span></div>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center"><span>Số tiền cần thanh toán</span><strong class="fs-4 num">{{ ticket.price|vnd }}</strong></div>
+        </div>
+    </div>
+
+    <div class="alert alert-info d-flex justify-content-between align-items-center">
+        <span>Chỗ được giữ đến <strong class="num">{{ ticket.hold_expires_at|dt('%H:%M:%S') }}</strong></span>
+        <strong class="num" id="countdown" data-remaining="{{ remaining }}">--:--</strong>
+    </div>
+
+    <form method="post" action="">
+        <p class="mb-1">Phương thức thanh toán</p>
+        {% for key, label in methods.items() %}
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="method" id="m-{{ key }}" value="{{ key }}" {{ 'checked' if loop.first }}>
+            <label class="form-check-label" for="m-{{ key }}">{{ label }}</label>
+        </div>
+        {% endfor %}
+        <div class="mb-3 mt-3">
+            <label class="form-label" for="outcome">Kết quả giả lập</label>
+            <select class="form-select" id="outcome" name="outcome">
+                <option value="success">Thanh toán thành công</option>
+                <option value="failed">Thanh toán thất bại (để thử lại)</option>
+            </select>
+        </div>
+        <button class="btn btn-success" type="submit">Thanh toán {{ ticket.price|vnd }}</button>
+        <a class="btn btn-outline-secondary" href="/my-tickets">Thanh toán sau</a>
+    </form>
+</div>
+{% endblock %}

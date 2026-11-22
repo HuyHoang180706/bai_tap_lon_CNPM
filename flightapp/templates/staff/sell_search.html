@@ -1,0 +1,55 @@
+{% extends 'layout/base.html' %}
+{% from 'layout/macros.html' import flight_filter, avail_list, pagination %}
+
+{% block title %}Bán vé tại quầy{% endblock %}
+
+{% block content %}
+<h1 class="text-center text-success mt-2">BÁN VÉ TẠI QUẦY</h1>
+<p class="text-center text-muted">Tra cứu chuyến bay theo mã, tuyến và thời gian bay rồi chọn chuyến để bán vé.
+    Chỉ bán được vé trước giờ khởi hành ít nhất {{ reg.counter_sale_min_hours }} giờ.</p>
+
+{{ flight_filter('/staff/sell', args, airports) }}
+
+{{ pagination(pages, page, args, '/staff/sell') }}
+
+{% if flights %}
+<table class="table table-striped align-middle">
+    <thead>
+    <tr>
+        <th>Mã</th>
+        <th>Tuyến bay</th>
+        <th>Khởi hành</th>
+        <th>Thời gian bay</th>
+        <th>Điểm dừng</th>
+        <th>Ghế còn lại, đơn giá</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for f in flights %}
+    {% set items = sellable(avail[f.id]) %}
+    {% set can_sell = open_flags[f.id] and items|selectattr('remaining')|list|length > 0 %}
+    <tr>
+        <td><strong>{{ f.code }}</strong></td>
+        <td>{{ f.route.name }}<div class="small text-muted">{{ f.route.origin.city }} đến {{ f.route.destination.city }}</div></td>
+        <td class="num">{{ f.departure_time|dt }}</td>
+        <td>{{ f.duration_minutes|dur }}</td>
+        <td>{% for s in f.stopovers %}{{ s.airport.code }}{{ ', ' if not loop.last }}{% else %}<span class="text-muted">Bay thẳng</span>{% endfor %}</td>
+        <td>{{ avail_list(items) }}</td>
+        <td class="text-nowrap">
+            {% if can_sell %}
+            <a class="btn btn-primary btn-sm" href="/staff/sell/{{ f.id }}?back={{ back|urlencode }}">Bán vé</a>
+            {% elif not open_flags[f.id] %}
+            <span class="small text-danger">Quá hạn bán vé<br>({{ deadline(f.departure_time, reg.counter_sale_min_hours)|dt }})</span>
+            {% else %}
+            <span class="small text-danger">Hết chỗ</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-warning mt-2">KHÔNG có chuyến bay nào phù hợp!</div>
+{% endif %}
+{% endblock %}

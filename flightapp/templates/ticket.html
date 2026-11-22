@@ -1,0 +1,36 @@
+{% extends 'layout/base.html' %}
+{% from 'layout/macros.html' import ticket_badge %}
+
+{% block title %}Vé {{ ticket.code }}{% endblock %}
+
+{% block content %}
+<div class="border rounded p-4 mt-3 mx-auto" style="max-width: 640px;">
+    <h2 class="text-center mb-4">VÉ CHUYẾN BAY</h2>
+    <table class="table table-borderless">
+        <tr><td class="text-muted" style="width: 9rem;">Chuyến bay</td>
+            <td><strong>{{ ticket.flight.code }}, {{ ticket.flight.route.origin.city }} ({{ ticket.flight.route.origin.code }}) đến {{ ticket.flight.route.destination.city }} ({{ ticket.flight.route.destination.code }})</strong></td></tr>
+        <tr><td class="text-muted">Khởi hành</td><td class="num"><strong>{{ ticket.flight.departure_time|dt }}</strong></td></tr>
+        <tr><td class="text-muted">Hành khách</td><td><strong>{{ ticket.passenger_name }}</strong></td></tr>
+        <tr><td class="text-muted">CMND/CCCD</td><td class="num"><strong>{{ ticket.id_number }}</strong></td></tr>
+        <tr><td class="text-muted">Điện thoại</td><td class="num"><strong>{{ ticket.phone }}</strong></td></tr>
+        <tr><td class="text-muted">Hạng vé</td><td><strong>{{ ticket.ticket_class.name }}</strong></td></tr>
+        <tr><td class="text-muted">Giá tiền</td><td class="num"><strong>{{ ticket.price|vnd }}</strong></td></tr>
+        <tr><td class="text-muted">Mã vé</td><td><strong>{{ ticket.code }}</strong></td></tr>
+        <tr><td class="text-muted">Trạng thái</td><td>{{ ticket_badge(ticket.status) }}</td></tr>
+        <tr><td class="text-muted">Hình thức</td>
+            <td>{{ 'Đặt online' if ticket.channel.name == 'ONLINE' else 'Bán tại quầy' }}{% if ticket.staff %}, nhân viên {{ ticket.staff.name }}{% endif %}</td></tr>
+    </table>
+    <div class="no-print d-flex flex-wrap gap-2">
+        {% if ticket.status.name == 'PAID' %}
+        <button class="btn btn-primary" type="button" onclick="window.print()">In vé</button>
+        {% elif ticket.status.name == 'PENDING' and ticket.customer_id == current_user.id %}
+        <a class="btn btn-success" href="/payment/{{ ticket.code }}">Thanh toán để hoàn tất</a>
+        {% endif %}
+        {% if current_user.is_staff_member %}
+        <a class="btn btn-outline-secondary" href="/staff/sell">Bán vé tiếp</a>
+        {% else %}
+        <a class="btn btn-outline-secondary" href="/my-tickets">Vé của tôi</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
