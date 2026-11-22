@@ -1,0 +1,50 @@
+{% extends 'layout/base.html' %}
+{% from 'layout/macros.html' import ticket_badge %}
+
+{% block title %}Vé của tôi{% endblock %}
+
+{% block content %}
+<h1 class="text-center text-success mt-2">VÉ CỦA TÔI</h1>
+
+{% if tickets %}
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Mã vé</th>
+        <th>Chuyến bay</th>
+        <th>Khởi hành</th>
+        <th>Hành khách</th>
+        <th>Hạng</th>
+        <th>Giá</th>
+        <th>Trạng thái</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for t in tickets %}
+    <tr>
+        <td><strong>{{ t.code }}</strong></td>
+        <td>{{ t.flight.code }}<div class="small text-muted">{{ t.flight.route.name }}</div></td>
+        <td class="num">{{ t.flight.departure_time|dt }}</td>
+        <td>{{ t.passenger_name }}</td>
+        <td>{{ t.ticket_class.name }}</td>
+        <td class="num">{{ t.price|vnd }}</td>
+        <td>{{ ticket_badge(t.status) }}</td>
+        <td class="text-nowrap">
+            {% if t.status.name == 'PAID' %}
+            <a class="btn btn-sm btn-outline-primary" href="/tickets/{{ t.code }}">Xem vé</a>
+            {% elif t.status.name == 'PENDING' %}
+            <a class="btn btn-sm btn-success" href="/payment/{{ t.code }}">Thanh toán</a>
+            <form method="post" action="/my-tickets/{{ t.code }}/cancel" class="d-inline">
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Hủy</button>
+            </form>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-warning mt-2">Bạn chưa đặt vé nào. <a href="/">Tìm chuyến bay</a></div>
+{% endif %}
+{% endblock %}

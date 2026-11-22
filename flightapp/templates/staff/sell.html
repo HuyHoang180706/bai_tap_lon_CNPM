@@ -1,0 +1,43 @@
+{% extends 'layout/base.html' %}
+{% from 'layout/macros.html' import ticket_fields, error_list %}
+
+{% block title %}Bán vé chuyến {{ flight.code }}{% endblock %}
+
+{% block content %}
+<h1 class="text-center text-success mt-2">VÉ CHUYẾN BAY</h1>
+<a class="d-inline-block mb-2" href="{{ back }}">&larr; Tra cứu chuyến bay khác</a>
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card mb-3">
+            <div class="card-body">
+                <p class="mb-0 small text-muted">{{ flight.code }}</p>
+                <h4>{{ flight.route.name }}</h4>
+                <p class="mb-1">{{ flight.route.origin.city }} đến {{ flight.route.destination.city }}</p>
+                <p class="mb-1"><strong class="num">{{ flight.departure_time|dt }}</strong></p>
+                <p class="mb-1 small">Bay {{ flight.duration_minutes|dur }}, dự kiến đến <span class="num">{{ flight.arrival_time|dt }}</span></p>
+                {% for s in flight.stopovers %}
+                <p class="mb-1 small text-muted">Dừng {{ s.airport.code }} {{ s.stop_minutes }} phút</p>
+                {% endfor %}
+                <hr>
+                <p class="mb-0 small">Hạn bán vé tại quầy: <strong class="num">{{ deadline|dt }}</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        {{ error_list(errors) }}
+        {% if not is_open %}
+        <div class="alert alert-danger">Chuyến bay này không còn được bán vé tại quầy (đã quá hạn hoặc không còn mở bán).</div>
+        {% else %}
+        <form method="post" action="">
+            <input type="hidden" name="back" value="{{ back }}">
+            <p class="mb-0"><span class="text-muted">Chuyến bay:</span>
+                <strong>{{ flight.code }} ({{ flight.route.name }}, {{ flight.departure_time|dt }})</strong></p>
+            {{ ticket_fields(form, avail) }}
+            <button class="btn btn-success mt-3" type="submit">Xuất vé</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

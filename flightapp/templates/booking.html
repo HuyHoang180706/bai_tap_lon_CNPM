@@ -1,0 +1,40 @@
+{% extends 'layout/base.html' %}
+{% from 'layout/macros.html' import ticket_fields, error_list %}
+
+{% block title %}Đặt vé chuyến {{ flight.code }}{% endblock %}
+
+{% block content %}
+<h1 class="text-center text-success mt-2">ĐẶT VÉ ONLINE</h1>
+<a class="d-inline-block mb-2" href="/">&larr; Quay lại danh sách chuyến bay</a>
+
+<div class="row">
+    <div class="col-md-5">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4>{{ flight.route.origin.code }} &rarr; {{ flight.route.destination.code }}</h4>
+                <p class="mb-1">{{ flight.route.origin.city }} đến {{ flight.route.destination.city }}, chuyến {{ flight.code }}</p>
+                <p class="mb-1"><strong class="num">{{ flight.departure_time|dt }}</strong></p>
+                <p class="mb-1 small">Bay {{ flight.duration_minutes|dur }}, dự kiến đến <span class="num">{{ flight.arrival_time|dt }}</span></p>
+                {% for s in flight.stopovers %}
+                <p class="mb-1 small text-muted">Dừng {{ s.airport.code }} {{ s.stop_minutes }} phút</p>
+                {% endfor %}
+                <hr>
+                <p class="mb-0 small">Hạn đặt vé: <strong class="num">{{ deadline|dt }}</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        {{ error_list(errors) }}
+        {% if not is_open %}
+        <div class="alert alert-danger">Chuyến bay này đã quá hạn đặt vé online (phải đặt trước giờ khởi hành ít nhất {{ reg.online_booking_min_hours }} giờ).</div>
+        {% else %}
+        <form method="post" action="">
+            {{ ticket_fields(form, avail) }}
+            <p class="small text-muted mt-3">Đặt vé online phải thanh toán trực tuyến. Sau khi bấm tiếp tục, ghế được giữ trong {{ reg.payment_hold_minutes }} phút để bạn thanh toán.</p>
+            <button class="btn btn-success" type="submit">Tiếp tục thanh toán</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

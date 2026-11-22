@@ -1,0 +1,45 @@
+{% extends 'layout/base.html' %}
+{% from 'layout/macros.html' import flight_filter, avail_list, pagination %}
+
+{% block title %}Tìm chuyến bay{% endblock %}
+
+{% block content %}
+<h1 class="text-center text-success mt-2">TÌM CHUYẾN BAY</h1>
+<p class="text-center text-muted">Chỉ hiển thị chuyến bay khởi hành sau ít nhất {{ reg.online_booking_min_hours }} giờ kể từ bây giờ.
+    Vé được giữ {{ reg.payment_hold_minutes }} phút để bạn thanh toán trực tuyến.</p>
+
+{{ flight_filter('/', args, airports) }}
+
+{{ pagination(pages, page, args, '/') }}
+
+{% if flights %}
+<div class="row">
+    {% for f in flights %}
+    {% set items = sellable(avail[f.id]) %}
+    {% set has_seat = items|selectattr('remaining')|list|length > 0 %}
+    <div class="col-md-6 p-2">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title">{{ f.route.origin.code }} &rarr; {{ f.route.destination.code }}
+                    <small class="text-muted fs-6">{{ f.route.origin.city }} đến {{ f.route.destination.city }}</small></h4>
+                <p class="card-text mb-1"><strong class="num">{{ f.departure_time|dt }}</strong>
+                    <span class="text-muted">chuyến {{ f.code }}</span></p>
+                <p class="card-text small">Bay {{ f.duration_minutes|dur }}, đến <span class="num">{{ f.arrival_time|dt('%H:%M %d/%m') }}</span>.
+                    {% for s in f.stopovers %}Dừng {{ s.airport.code }} {{ s.stop_minutes }} phút{{ ', ' if not loop.last }}{% else %}Bay thẳng{% endfor %}</p>
+                {{ avail_list(items) }}
+                <div class="mt-3">
+                    {% if has_seat %}
+                    <a href="/booking/{{ f.id }}" class="btn btn-danger">Đặt vé</a>
+                    {% else %}
+                    <span class="text-danger">Hết chỗ</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-warning mt-2">KHÔNG có chuyến bay nào phù hợp!</div>
+{% endif %}
+{% endblock %}

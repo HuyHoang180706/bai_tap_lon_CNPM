@@ -1,0 +1,123 @@
+{# Các macro dùng chung #}
+
+{% macro pagination(pages, page, args, path) %}
+{% if pages > 1 %}
+<ul class="pagination mt-2">
+    {% for i in range(1, pages + 1) %}
+    <li class="page-item {{ 'active' if i == page }}">
+        <a class="page-link" href="{{ path }}?{{ args|urlencode }}{{ '&' if args }}page={{ i }}">{{ i }}</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endmacro %}
+
+{% macro ticket_badge(status) %}
+  {% set m = {'PAID': ('success', 'Đã thanh toán'), 'PENDING': ('warning', 'Chờ thanh toán'),
+              'CANCELLED': ('secondary', 'Đã hủy'), 'EXPIRED': ('secondary', 'Hết hạn giữ chỗ')} %}
+  <span class="badge bg-{{ m[status.name][0] }}">{{ m[status.name][1] }}</span>
+{% endmacro %}
+
+{% macro flight_badge(status) %}
+  {% set m = {'SCHEDULED': ('primary', 'Đã lập lịch'), 'CANCELLED': ('danger', 'Đã hủy'),
+              'COMPLETED': ('secondary', 'Đã bay')} %}
+  <span class="badge bg-{{ m[status.name][0] }}">{{ m[status.name][1] }}</span>
+{% endmacro %}
+
+{# Số ghế còn lại và đơn giá từng hạng #}
+{% macro avail_list(items) %}
+<ul class="list-unstyled mb-0 small">
+    {% for a in items %}
+    <li>
+        <strong>{{ a.ticket_class.name }}</strong>:
+        {% if a.remaining > 0 %}còn {{ a.remaining }}/{{ a.total }} ghế{% else %}<span class="text-danger">hết chỗ</span>{% endif %}
+        {% if a.price is not none %}, <span class="num">{{ a.price|vnd }}</span>{% else %}, <span class="text-danger">chưa có giá</span>{% endif %}
+    </li>
+    {% else %}
+    <li class="text-muted">Chưa có ghế</li>
+    {% endfor %}
+</ul>
+{% endmacro %}
+
+{# Bộ lọc tra cứu chuyến bay (GET) #}
+{% macro flight_filter(action, args, airports) %}
+<form method="get" action="{{ action }}" class="border rounded p-3 mt-3 mb-3 bg-light">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-2">
+            <label class="form-label small mb-1" for="f-kw">Mã chuyến bay</label>
+            <input class="form-control form-control-sm" id="f-kw" name="kw" value="{{ args.get('kw', '') }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1" for="f-origin">Sân bay đi</label>
+            <select class="form-select form-select-sm" id="f-origin" name="origin_id">
+                <option value="">Tất cả</option>
+                {% for a in airports %}<option value="{{ a.id }}" {{ 'selected' if args.get('origin_id')|string == a.id|string }}>{{ a.code }} - {{ a.city }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1" for="f-dest">Sân bay đến</label>
+            <select class="form-select form-select-sm" id="f-dest" name="destination_id">
+                <option value="">Tất cả</option>
+                {% for a in airports %}<option value="{{ a.id }}" {{ 'selected' if args.get('destination_id')|string == a.id|string }}>{{ a.code }} - {{ a.city }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1" for="f-from">Bay từ ngày</label>
+            <input class="form-control form-control-sm" type="date" id="f-from" name="date_from" value="{{ args.get('date_from', '') }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small mb-1" for="f-to">Đến ngày</label>
+            <input class="form-control form-control-sm" type="date" id="f-to" name="date_to" value="{{ args.get('date_to', '') }}">
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button class="btn btn-primary btn-sm" type="submit">Tìm kiếm</button>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ action }}">Xóa lọc</a>
+        </div>
+    </div>
+</form>
+{% endmacro %}
+
+{# Hiển thị danh sách lỗi #}
+{% macro error_list(errors) %}
+{% if errors %}
+<div class="alert alert-danger mt-2">
+    <ul class="mb-0">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+{% endmacro %}
+
+{# Các ô nhập trên biểu mẫu VÉ CHUYẾN BAY: hành khách, CMND/CCCD, điện thoại, hạng vé, giá tiền #}
+{% macro ticket_fields(form, avail) %}
+<div class="form-floating mb-3 mt-3">
+    <input type="text" class="form-control" id="passenger_name" placeholder="Hành khách" name="passenger_name" maxlength="100" value="{{ form.get('passenger_name', '') }}" required />
+    <label for="passenger_name">Hành khách</label>
+</div>
+<div class="form-floating mb-3">
+    <input type="text" class="form-control" id="id_number" placeholder="CMND/CCCD" name="id_number" inputmode="numeric" maxlength="14" value="{{ form.get('id_number', '') }}" required />
+    <label for="id_number">CMND/CCCD (9 hoặc 12 số)</label>
+</div>
+<div class="form-floating mb-3">
+    <input type="text" class="form-control" id="phone" placeholder="Điện thoại" name="phone" inputmode="tel" value="{{ form.get('phone', '') }}" required />
+    <label for="phone">Điện thoại</label>
+</div>
+
+<p class="mb-1">Hạng vé</p>
+{% for a in avail %}
+<div class="form-check border rounded p-2 ps-5 mb-2">
+    <input class="form-check-input" type="radio" name="class_id" id="class-{{ a.ticket_class.id }}"
+           value="{{ a.ticket_class.id }}" data-price="{{ a.price or 0 }}"
+           {{ 'disabled' if a.remaining == 0 or a.price is none }}
+           {{ 'checked' if form.get('class_id')|string == a.ticket_class.id|string }}>
+    <label class="form-check-label d-flex justify-content-between w-100" for="class-{{ a.ticket_class.id }}">
+        <span>{{ a.ticket_class.name }} <small class="text-muted">còn {{ a.remaining }} ghế</small></span>
+        <span class="num fw-bold">{{ a.price|vnd if a.price is not none else 'Chưa có giá' }}</span>
+    </label>
+</div>
+{% else %}
+<p class="text-danger">Chuyến bay chưa có hạng vé nào để bán.</p>
+{% endfor %}
+
+<div class="d-flex justify-content-between align-items-center border-top pt-3 mt-3">
+    <span>Giá tiền</span><strong class="fs-4 num" id="price-display">Chọn hạng vé</strong>
+</div>
+{% endmacro %}

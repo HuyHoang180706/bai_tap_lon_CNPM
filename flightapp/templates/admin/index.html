@@ -1,0 +1,86 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+
+{% if current_user.is_authenticated and current_user.is_admin %}
+
+<div class="alert alert-info mt-2">
+  <h3>Chào <span class="text-success">{{ current_user.username }}</span>!</h3>
+</div>
+
+{% if kpi %}
+<div class="row mb-3">
+  <div class="col-md-4"><div class="border rounded p-3"><div class="small text-muted">Chuyến bay trong 7 ngày tới</div><h3 class="mb-0">{{ kpi.upcoming_flights }}</h3></div></div>
+  <div class="col-md-4"><div class="border rounded p-3"><div class="small text-muted">Vé bán trong hôm nay</div><h3 class="mb-0">{{ kpi.sold_today }}</h3></div></div>
+  <div class="col-md-4"><div class="border rounded p-3"><div class="small text-muted">Doanh thu vé đã thu trong tháng này</div><h3 class="mb-0">{{ kpi.revenue_month|vnd }}</h3></div></div>
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col-5">
+    <table class="table">
+      <tr>
+        <th>Id</th>
+        <th>Tuyến bay</th>
+        <th>Số chuyến bay</th>
+      </tr>
+      {% for s in stats %}
+      <tr>
+        <td>{{ s[0] }}</td>
+        <td>{{ s[1] }}</td>
+        <td>{{ s[2] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  <div class="col-7">
+    <div>
+      <canvas id="myChart"></canvas>
+    </div>
+  </div>
+</div>
+
+{% elif current_user.is_authenticated %}
+
+<div class="alert alert-warning mt-2">Tài khoản của bạn không có quyền quản trị. <a href="/logout">Đăng xuất</a></div>
+
+{% else %}
+
+<h1 class="text-center text-success mt-2">ĐĂNG NHẬP QUẢN TRỊ</h1>
+{% if err_msg %}
+<div class="alert alert-danger">
+  {{ err_msg }}
+</div>
+{% endif %}
+
+<form method="post" action="/login">
+  <div class="form-group">
+    <label for="username">Tên đăng nhập:</label>
+    <input type="text" class="form-control" placeholder="Tên đăng nhập" id="username" name="username" />
+  </div>
+  <div class="form-group">
+    <label for="pwd">Mật khẩu:</label>
+    <input type="password" class="form-control" placeholder="Mật khẩu" id="pwd" name="password" />
+  </div>
+  <button type="submit" class="btn btn-primary">Đăng nhập</button>
+</form>
+{% endif %}
+
+{% if stats %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/draw.js') }}"></script>
+<script>
+  let data = [];
+  let labels = [];
+
+  {% for s in stats %}
+    labels.push('{{ s[1] }}');
+    data.push({{ s[2] }})
+  {% endfor %}
+
+  window.onload = function() {
+    drawChart(data, labels, 'Số chuyến bay', 'myChart', 'bar');
+  }
+</script>
+{% endif %}
+{% endblock %}

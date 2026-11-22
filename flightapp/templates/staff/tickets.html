@@ -1,0 +1,46 @@
+{% extends 'layout/base.html' %}
+{% from 'layout/macros.html' import pagination, ticket_badge %}
+
+{% block title %}Tra cứu vé{% endblock %}
+
+{% block content %}
+<h1 class="text-center text-success mt-2">TRA CỨU VÉ ĐÃ BÁN</h1>
+
+<form method="get" action="/staff/tickets" class="border rounded p-3 mt-3 mb-3 bg-light">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-8">
+            <label class="form-label small mb-1" for="kw">Mã vé, CMND/CCCD, số điện thoại hoặc tên hành khách</label>
+            <input class="form-control form-control-sm" id="kw" name="kw" value="{{ kw }}">
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+            <button class="btn btn-primary btn-sm" type="submit">Tìm vé</button>
+            <a class="btn btn-outline-secondary btn-sm" href="/staff/tickets">Xóa lọc</a>
+        </div>
+    </div>
+</form>
+
+{{ pagination(pages, page, args, '/staff/tickets') }}
+
+<table class="table table-striped align-middle">
+    <thead>
+    <tr><th>Mã vé</th><th>Chuyến bay</th><th>Khởi hành</th><th>Hành khách</th><th>CMND/CCCD</th><th>Hạng</th><th>Giá</th><th>Kênh</th><th>Trạng thái</th></tr>
+    </thead>
+    <tbody>
+    {% for t in tickets %}
+    <tr>
+        <td><a href="/tickets/{{ t.code }}">{{ t.code }}</a></td>
+        <td>{{ t.flight.code }}<div class="small text-muted">{{ t.flight.route.name }}</div></td>
+        <td class="num">{{ t.flight.departure_time|dt }}</td>
+        <td>{{ t.passenger_name }}<div class="small text-muted">{{ t.phone }}</div></td>
+        <td class="num">{{ t.id_number }}</td>
+        <td>{{ t.ticket_class.name }}</td>
+        <td class="num">{{ t.price|vnd }}</td>
+        <td>{{ 'Online' if t.channel.name == 'ONLINE' else 'Quầy' }}</td>
+        <td>{{ ticket_badge(t.status) }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9" class="text-center text-muted py-4">Không tìm thấy vé.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
